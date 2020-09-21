@@ -32,7 +32,7 @@ public class UDPMulticastClient {
             publisher.send(packetToSend);
 
             long startTime = System.currentTimeMillis();
-            while (System.currentTimeMillis() - startTime < RECEIVE_TIMEOUT) {
+            while ((System.currentTimeMillis() - startTime) < RECEIVE_TIMEOUT) {
                 byte[] recvBuf = new byte[256];
                 DatagramPacket receivedPacket = new DatagramPacket(recvBuf, recvBuf.length);
                 try {

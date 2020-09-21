@@ -7,10 +7,12 @@ public class Main {
             client = new UDPMulticastClient(2222, "224.0.0.69");
             client.start();
         } catch (IOException e) {
+            e.printStackTrace();
+        }
+        finally {
             if (client != null) {
                 client.stop();
             }
-            e.printStackTrace();
         }
     }
 }
