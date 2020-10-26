@@ -2,6 +2,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
 public class Server implements Closeable {
@@ -15,7 +16,7 @@ public class Server implements Closeable {
         clientsThreads = new ArrayList<>();
     }
 
-    public void start() throws IOException {
+    public void start() throws IOException, NoSuchAlgorithmException {
         while (!serverSocket.isClosed()) {
             Socket clientSocket = serverSocket.accept();
             Thread clientThread = new Thread(new ClientHandler(clientSocket));

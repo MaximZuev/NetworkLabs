@@ -1,6 +1,9 @@
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -19,10 +22,13 @@ public class ClientHandler implements Runnable {
 
     private boolean isEnded;
 
-    public ClientHandler(Socket socket) throws IOException {
+    private final MessageDigest md5Digest;
+
+    public ClientHandler(Socket socket) throws IOException, NoSuchAlgorithmException {
         this.socket = socket;
         dis = new DataInputStream(socket.getInputStream());
         dos = new DataOutputStream(socket.getOutputStream());
+        md5Digest = MessageDigest.getInstance("MD5");
     }
 
     @Override
@@ -32,7 +38,7 @@ public class ClientHandler implements Runnable {
             recvFileLengthAndName();
             createFile();
             recvFile();
-            check();
+            recvChecksum();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -94,14 +100,21 @@ public class ClientHandler implements Runnable {
                 if ((fileLength - totalRecvBytes) < 1024) {
                     len = (int) (fileLength - totalRecvBytes);
                 }
+
+                md5Digest.update(buffer, 0, bytes);
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void check() throws IOException {
-        boolean flag = (fileLength == file.length());
+    private void recvChecksum() throws IOException {
+        byte[] clientChecksum = new byte[16];
+        byte[] serverChecksum = md5Digest.digest();
+        boolean flag = false;
+        if (dis.read(clientChecksum, 0, 16) > 0) {
+            flag = Arrays.equals(serverChecksum, clientChecksum);
+        }
         dos.writeBoolean(flag);
         dos.flush();
         isEnded = true;
