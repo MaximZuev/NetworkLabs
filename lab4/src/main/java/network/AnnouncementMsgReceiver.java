@@ -34,12 +34,7 @@ public class AnnouncementMsgReceiver extends Thread implements Closeable {
         try {
             while (!Thread.currentThread().isInterrupted()) {
                 multicastSocket.receive(packet);
-
-
                 GameMessage gameMessage = GameMessage.parseFrom(Arrays.copyOf(packet.getData(), packet.getLength()));
-
-
-
                 if (gameMessage.hasAnnouncement()) {
                     AnnouncementMsg announcementMsg = gameMessage.getAnnouncement();
                     List<String> gameInfo = parseAnnouncementMsg(announcementMsg, packet.getAddress(), packet.getPort());
@@ -86,7 +81,6 @@ public class AnnouncementMsgReceiver extends Thread implements Closeable {
 
     @Override
     public void close() {
-        System.out.println("close");
         timer.cancel();
     }
 }

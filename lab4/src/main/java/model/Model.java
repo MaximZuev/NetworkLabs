@@ -4,11 +4,12 @@ import me.ippolitov.fit.snakes.SnakesProto.*;
 import me.ippolitov.fit.snakes.SnakesProto.GameState.*;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Model {
-    private final Map<Integer, GamePlayer> players = new HashMap<>();
-    private final Map<Integer, Snake> snakes = new HashMap<>();
-    private final Map<Integer, Direction> changes = new HashMap<>();
+    private final Map<Integer, GamePlayer> players = new ConcurrentHashMap<>();
+    private final Map<Integer, Snake> snakes = new ConcurrentHashMap<>();
+    private final Map<Integer, Direction> changes = new ConcurrentHashMap<>();
     private final Field field;
     private final List<Coord> foods;
     private GameConfig config;
@@ -60,11 +61,11 @@ public class Model {
         putFoods();
     }
 
-    public synchronized void addPlayer(GamePlayer player) {
+    public void addPlayer(GamePlayer player) {
         players.put(player.getId(), player);
     }
 
-    public synchronized void addSnake(Snake snake) {
+    public void addSnake(Snake snake) {
         snakes.put(snake.getPlayerId(), snake);
     }
 
@@ -270,6 +271,10 @@ public class Model {
             GamePlayer player = players.get(n);
             player = player.toBuilder()
                     .setRole(NodeRole.VIEWER)
+                    .setId(player.getId())
+                    .setIpAddress(player.getIpAddress())
+                    .setName(player.getName())
+                    .setPort(player.getPort())
                     .build();
             players.put(player.getId(), player);
             addDeadFood(player.getId());
@@ -345,6 +350,10 @@ public class Model {
                 .setConfig(config)
                 .setStateOrder(++stateOrder)
                 .build();
+    }
+
+    public GameConfig getConfig() {
+        return config;
     }
 
     public Field getField() {

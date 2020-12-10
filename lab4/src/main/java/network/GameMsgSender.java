@@ -44,7 +44,7 @@ public class GameMsgSender {
         }
     }
 
-    public void sendJoinMsg(int receiverId, String name, InetAddress address, int port, boolean isOnlyView) {
+    public synchronized void sendJoinMsg(int receiverId, String name, InetAddress address, int port, boolean isOnlyView) {
         JoinMsg joinMsg = JoinMsg.newBuilder()
                 .setName(name)
                 .setOnlyView(isOnlyView)
@@ -57,7 +57,7 @@ public class GameMsgSender {
         sendGameMsg(gameMessage, address, port, false);
     }
 
-    public void sendStateMsg(int senderId, int receiverId, GameState state, InetAddress address, int port) {
+    public synchronized void sendStateMsg(int senderId, int receiverId, GameState state, InetAddress address, int port) {
         StateMsg stateMsg = StateMsg.newBuilder()
                 .setState(state)
                 .build();
@@ -70,7 +70,7 @@ public class GameMsgSender {
         sendGameMsg(gameMessage, address, port, false);
     }
 
-    public void sendAnnouncementMsg(GameState state) {
+    public synchronized void sendAnnouncementMsg(GameState state) {
         GamePlayers players = state.getPlayers();
         GameConfig config = state.getConfig();
         AnnouncementMsg announcementMsg = AnnouncementMsg.newBuilder()
@@ -84,7 +84,7 @@ public class GameMsgSender {
         sendGameMsg(gameMsg, multicastIp, multicastPort, false);
     }
 
-    public void sendSteerMsg(int senderId, int receiverId, Direction direction, InetAddress masterIp, int masterPort) {
+    public synchronized void sendSteerMsg(int senderId, int receiverId, Direction direction, InetAddress masterIp, int masterPort) {
         SteerMsg steerMsg = SteerMsg.newBuilder()
                 .setDirection(direction)
                 .build();
@@ -97,7 +97,7 @@ public class GameMsgSender {
         sendGameMsg(gameMessage, masterIp, masterPort, false);
     }
 
-    public void sendAckMsg(int senderId, int receiverId, long msg_seq, InetAddress address, int port) {
+    public synchronized void sendAckMsg(int senderId, int receiverId, long msg_seq, InetAddress address, int port) {
         AckMsg ackMsg = AckMsg.newBuilder().build();
         GameMessage gameMessage = GameMessage.newBuilder()
                 .setAck(ackMsg)
@@ -108,7 +108,7 @@ public class GameMsgSender {
         sendGameMsg(gameMessage, address, port, false);
     }
 
-    public void sendErrorMsg(int senderId, int receiverId, String errorMessage, InetAddress address, int port) {
+    public synchronized void sendErrorMsg(int senderId, int receiverId, String errorMessage, InetAddress address, int port) {
         ErrorMsg errorMsg = ErrorMsg.newBuilder()
                 .setErrorMessage(errorMessage)
                 .build();
@@ -121,7 +121,7 @@ public class GameMsgSender {
         sendGameMsg(gameMessage, address, port, false);
     }
 
-    public void sendRoleChangeMsg(int senderId, int receiverId, NodeRole senderRole, NodeRole receiverRole,
+    public synchronized void sendRoleChangeMsg(int senderId, int receiverId, NodeRole senderRole, NodeRole receiverRole,
                                                InetAddress address, int port) {
         RoleChangeMsg roleChangeMsg = RoleChangeMsg.newBuilder()
                 .setReceiverRole(receiverRole)
@@ -136,7 +136,7 @@ public class GameMsgSender {
         sendGameMsg(gameMessage, address, port, true);
     }
 
-    public void sendPingMsg(int senderId, int receiverId, InetAddress address, int port) {
+    public synchronized void sendPingMsg(int senderId, int receiverId, InetAddress address, int port) {
         PingMsg pingMsg = PingMsg.newBuilder().build();
         GameMessage gameMessage = GameMessage.newBuilder()
                 .setPing(pingMsg)

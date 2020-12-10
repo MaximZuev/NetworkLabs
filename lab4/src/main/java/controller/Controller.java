@@ -7,7 +7,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 
 public class Controller extends KeyAdapter {
-    private Node node;
+    private final Node node;
 
     public Controller(Node node) {
         this.node = node;

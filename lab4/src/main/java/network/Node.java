@@ -3,7 +3,6 @@ package network;
 import me.ippolitov.fit.snakes.SnakesProto.*;
 import me.ippolitov.fit.snakes.SnakesProto.GameState.Coord;
 import me.ippolitov.fit.snakes.SnakesProto.GameState.Snake;
-import model.Field;
 import model.Model;
 import observer.Observable;
 import observer.Observer;
@@ -20,7 +19,7 @@ public class Node implements Closeable, Observable {
     private static final int MULTICAST_PORT = 9192;
     private static final long ANNOUNCEMENT_MSG_PERIOD_MS = 1000;
 
-    private  MulticastSocket multicastSocket;
+    private MulticastSocket multicastSocket;
     private DatagramSocket datagramSocket;
     private Model model;
     private GameState state;
@@ -110,6 +109,7 @@ public class Node implements Closeable, Observable {
                 notifyObservers();
             }
         }, 0, config.getStateDelayMs());
+
         startSendAnnouncementMsg();
         startCheckPlayerTTL();
         startSendPingMsg();
@@ -131,7 +131,7 @@ public class Node implements Closeable, Observable {
             @Override
             public void run() {
                 lastPingOutTime.keySet().removeIf(n -> {
-                    if (System.currentTimeMillis() - lastPingOutTime.get(n) > config.getPingDelayMs()) {
+                    if ((n != id) && (System.currentTimeMillis() - lastPingOutTime.get(n) > config.getPingDelayMs())) {
                         GamePlayer player = model.getPlayer(n);
                         if (player != null) {
                             try {
@@ -159,7 +159,7 @@ public class Node implements Closeable, Observable {
             @Override
             public void run() {
                 lastPingInTime.keySet().removeIf(n -> {
-                    if (System.currentTimeMillis() - lastPingInTime.get(n) > config.getNodeTimeoutMs()) {
+                    if ((n != id) && (System.currentTimeMillis() - lastPingInTime.get(n) > config.getNodeTimeoutMs())) {
                         GamePlayer player = model.getPlayer(n);
                         switch (role) {
                             case NORMAL:
@@ -241,6 +241,11 @@ public class Node implements Closeable, Observable {
         if (TTLTimer != null) {
             TTLTimer.cancel();
         }
+        if (pingMsgTimer != null) {
+            pingMsgTimer.cancel();
+        }
+        model = null;
+        state = null;
     }
 
     public void joinToGame(int gameNumber, boolean isOnlyView) {
@@ -263,21 +268,26 @@ public class Node implements Closeable, Observable {
         this.masterId = masterId;
         this.masterIp = masterIp;
         this.masterPort = masterPort;
-        startCheckPlayerTTL();
-        startSendPingMsg();
     }
 
     public void updateModel(GameState state) {
         if (role != NodeRole.MASTER) {
-            if (this.state.getStateOrder() < state.getStateOrder()) {
+            if (this.state != null) {
+                if (this.state.getStateOrder() < state.getStateOrder()) {
+                    this.state = state;
+                    model.update(state);
+                }
+            } else {
                 this.state = state;
-                model.update(state);
-                notifyObservers();
+                model = new Model(state);
+                startCheckPlayerTTL();
+                startSendPingMsg();
             }
+            notifyObservers();
         }
     }
 
-    public int addNewPlayer(NodeRole role, String ip, int port, String name) {
+    public synchronized int addNewPlayer(NodeRole role, String ip, int port, String name) {
         if (role == NodeRole.NORMAL) {
             Coord headCoord = model.getField().getNewHeadCoord();
             if (headCoord != null) {
@@ -340,16 +350,8 @@ public class Node implements Closeable, Observable {
                 .build();
     }
 
-    public GameConfig getConfig() {
-        return config;
-    }
-
-    public Field getField() {
-        if (model != null) {
-            return model.getField();
-        } else {
-            return null;
-        }
+    public Model getModel() {
+        return model;
     }
 
     public int getId() {
@@ -362,6 +364,10 @@ public class Node implements Closeable, Observable {
 
     public void setRole(NodeRole role) {
         this.role = role;
+    }
+
+    public List<List<String>> getGamesInfo() {
+        return gamesInfo;
     }
 
     @Override
@@ -381,10 +387,7 @@ public class Node implements Closeable, Observable {
 
     @Override
     public void close() {
-        System.out.println("close");
-        modelTimer.cancel();
-        announcementMsgTimer.cancel();
-        pingMsgTimer.cancel();
+        stopPlay();
         gameMsgReceiver.interrupt();
         announceMsgReceiver.close();
         announceMsgReceiver.interrupt();
